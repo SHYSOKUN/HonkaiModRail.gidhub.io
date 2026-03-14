@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HONKAI MOD RAIL</title>
+    <style>
+        :root {
+            --hsr-cyan: #61f2ff;
+            --hsr-gold: #f3c969;
+            --hsr-bg: #020408;
+            --glass: rgba(255, 255, 255, 0.05);
+            --border: rgba(97, 242, 255, 0.25);
+            --staff-bg: rgba(0, 0, 0, 0.85);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; cursor: crosshair; }
+
+        body {
+            background-color: var(--hsr-bg);
+            color: #fff;
+            font-family: 'Segoe UI', sans-serif;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        #warpCanvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.6) 100%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .hsr-main-layout {
+            width: 95%;
+            max-width: 900px;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 900;
+            line-height: 0.85;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            letter-spacing: -2px;
+        }
+
+        h1 span { color: var(--hsr-cyan); text-shadow: 0 0 15px rgba(97, 242, 255, 0.4); }
+
+        /* --- SIDE BY SIDE CONTAINER --- */
+        .flex-row {
+            display: flex;
+            gap: 15px;
+            align-items: stretch;
+            width: 100%;
+        }
+
+        .terminal-container {
+            flex: 1.5; /* Terminal is wider */
+            position: relative;
+            background: var(--glass);
+            border: 1px solid var(--border);
+            backdrop-filter: blur(15px);
+            height: 160px;
+        }
+
+        .terminal-container::before {
+            content: "";
+            position: absolute;
+            top: 0; left: -1px;
+            width: 3px; height: 100%;
+            background: var(--hsr-cyan);
+            box-shadow: 0 0 10px var(--hsr-cyan);
+        }
+
+        textarea#lockedTerminal {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            border: none;
+            color: #ccc;
+            font-family: 'Consolas', monospace;
+            font-size: 0.85rem;
+            padding: 12px;
+            resize: none;
+            outline: none;
+            line-height: 1.4;
+            overflow: hidden;
+        }
+
+        .staff-panel {
+            flex: 0.5; /* Manifest is slimmer */
+            background: var(--staff-bg);
+            border: 1px solid var(--border);
+            padding: 12px 15px;
+            backdrop-filter: blur(20px);
+            height: 160px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-width: 200px;
+        }
+
+        .staff-header {
+            color: var(--hsr-gold);
+            font-size: 0.65rem;
+            letter-spacing: 2px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 4px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .staff-member { margin-top: 8px; }
+
+        .role {
+            font-size: 0.5rem;
+            color: var(--hsr-cyan);
+            text-transform: uppercase;
+        }
+
+        .name {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .status-bar {
+            font-size: 0.6rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #00ff00;
+            font-weight: bold;
+        }
+
+        .pulse-dot {
+            width: 5px; height: 5px;
+            background: #00ff00;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #00ff00;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+        .discord-btn {
+            margin-top: 20px;
+            display: inline-block;
+            padding: 10px 30px;
+            border: 1px solid var(--hsr-cyan);
+            color: #fff;
+            text-decoration: none;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            background: rgba(97, 242, 255, 0.05);
+            transition: 0.3s;
+        }
+
+        .discord-btn:hover { background: var(--hsr-cyan); color: #000; box-shadow: 0 0 15px var(--hsr-cyan); }
+
+        footer {
+            position: fixed;
+            bottom: 15px;
+            width: 90%;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.55rem;
+            color: rgba(255,255,255,0.2);
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="warpCanvas"></canvas>
+    <div class="overlay"></div>
+
+    <div class="hsr-main-layout">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+            <div style="width:8px; height:8px; background:var(--hsr-cyan); transform:rotate(45deg);"></div>
+            <div style="font-size:0.55rem; color:var(--hsr-gold); letter-spacing:2px; font-weight: bold;">ARCHIVE_V4</div>
+        </div>
+        
+        <h1>HONKAI <br><span>MOD RAIL</span></h1>
+
+        <div class="flex-row">
+            <div class="terminal-container">
+                <textarea id="lockedTerminal" readonly></textarea>
+            </div>
+
+            <div class="staff-panel">
+                <div class="staff-header">MANIFEST</div>
+                <div>
+                    <div class="staff-member">
+                        <div class="role">Lead Dev</div>
+                        <div class="name">SHYSOKUN</div>
+                    </div>
+                    <div class="staff-member">
+                        <div class="role">Moderator</div>
+                        <div class="name">KORMATTO</div>
+                    </div>
+                </div>
+                <div class="status-bar">
+                    <div class="pulse-dot"></div>
+                    <span>OPTIMAL</span>
+                </div>
+            </div>
+        </div>
+
+        <a href="https://discord.gg/QuNRQQP3fK" target="_blank" class="discord-btn">Join Signal</a>
+    </div>
+
+    <footer>
+        <div>May this journey lead us starward.</div>
+        <div>HSR MOD TEAM © 2026</div>
+    </footer>
+
+    <script>
+        const canvas = document.getElementById('warpCanvas');
+        const ctx = canvas.getContext('2d');
+        let stars = [];
+
+        function initStars() {
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            stars = [];
+            for (let i = 0; i < 200; i++) {
+                stars.push({ x: (Math.random()-0.5)*canvas.width, y: (Math.random()-0.5)*canvas.height, z: Math.random()*canvas.width });
+            }
+        }
+
+        function animate() {
+            ctx.fillStyle = '#020408'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.save(); ctx.translate(canvas.width/2, canvas.height/2);
+            stars.forEach(s => {
+                s.z -= 4; if (s.z <= 1) s.z = canvas.width;
+                let x = s.x * (canvas.width/s.z); let y = s.y * (canvas.width/s.z);
+                let size = (1 - s.z/canvas.width) * 1.8;
+                ctx.beginPath(); ctx.fillStyle = `rgba(97, 242, 255, ${1 - s.z/canvas.width})`;
+                ctx.arc(x, y, size, 0, Math.PI*2); ctx.fill();
+            });
+            ctx.restore(); requestAnimationFrame(animate);
+        }
+
+        const logText = "> Terminal initialized.\n> Discord Protocol 1.0.0\n> Network: Online.\n> Global Version: 4.0.0\n> Next Update: 4.1.0\n> Creators verified.\n> Starward Bound.\n> _";
+        const terminal = document.getElementById('lockedTerminal');
+        let index = 0;
+        let typingStarted = false;
+
+        function typeWriter() {
+            if (typingStarted) return; 
+            typingStarted = true;
+            terminal.value = ""; 
+            
+            function addChar() {
+                if (index < logText.length) {
+                    terminal.value += logText.charAt(index);
+                    index++;
+                    setTimeout(addChar, 25);
+                }
+            }
+            addChar();
+        }
+
+        window.addEventListener('resize', initStars);
+        initStars(); 
+        animate();
+        window.addEventListener('DOMContentLoaded', typeWriter);
+    </script>
+</body>
+</html>
